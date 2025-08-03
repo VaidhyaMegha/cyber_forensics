@@ -1,0 +1,66 @@
+{
+  "target_url": "http://neverssl.com",
+  "analysis_start": "2025-08-03T12:13:51.556056",
+  "parsed_url": {
+    "scheme": "http",
+    "netloc": "neverssl.com",
+    "path": "",
+    "query": ""
+  },
+  "network_analysis": {
+    "ip_addresses": [
+      "34.223.124.45"
+    ],
+    "geolocation": {
+      "ip": "34.223.124.45",
+      "country": "United States",
+      "region": "Oregon",
+      "city": "Portland",
+      "isp": "Amazon.com, Inc.",
+      "latitude": 45.5235,
+      "longitude": -122.676
+    },
+    "dns_info": {
+      "hostname": "neverssl.com",
+      "fqdn": "ec2-34-223-124-45.us-west-2.compute.amazonaws.com"
+    },
+    "cloud_provider": "Amazon AWS"
+  },
+  "security_analysis": {
+    "ssl_analysis": {
+      "has_ssl": false,
+      "risk": "No SSL/TLS encryption - data transmitted in plain text"
+    },
+    "security_headers": {
+      "security_score": 0,
+      "present_headers": [],
+      "missing_headers": [
+        "Strict-Transport-Security",
+        "Content-Security-Policy",
+        "X-Frame-Options",
+        "X-Content-Type-Options",
+        "X-XSS-Protection"
+      ],
+      "recommendations": [
+        "Add HSTS (Strict-Transport-Security)",
+        "Add CSP (Content-Security-Policy)",
+        "Add Clickjacking Protection (X-Frame-Options)",
+        "Add MIME Sniffing Protection (X-Content-Type-Options)",
+        "Add XSS Protection (X-XSS-Protection)",
+        "Consider hiding Server header"
+      ]
+    },
+    "vulnerabilities": []
+  },
+  "risk_assessment": {
+    "risk_score": 45,
+    "risk_level": "MEDIUM",
+    "risk_factors": [
+      "No SSL/TLS encryption",
+      "Poor security headers implementation"
+    ],
+    "recommendation": "\u26a0\ufe0f MODERATE RISK: Some security concerns detected. Exercise caution when accessing."
+  },
+  "analysis_end": "2025-08-03T12:14:27.437455",
+  "analysis_duration": 35.881399
+}
