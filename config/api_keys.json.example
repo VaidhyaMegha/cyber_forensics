@@ -1,0 +1,16 @@
+{
+  "virustotal": "your_virustotal_api_key_here",
+  "shodan": "your_shodan_api_key_here",
+  "urlvoid": "your_urlvoid_api_key_here",
+  "abuseipdb": "your_abuseipdb_api_key_here",
+  "censys": {
+    "api_id": "your_censys_api_id_here",
+    "api_secret": "your_censys_api_secret_here"
+  },
+  "securitytrails": "your_securitytrails_api_key_here",
+  "ipinfo": "your_ipinfo_token_here",
+  "maxmind": {
+    "license_key": "your_maxmind_license_key_here",
+    "account_id": "your_maxmind_account_id_here"
+  }
+}

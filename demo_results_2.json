@@ -1,0 +1,54 @@
+{
+  "target_url": "http://neverssl.com",
+  "analysis_start": "2025-09-30T15:08:37.577037",
+  "parsed_url": {
+    "scheme": "http",
+    "netloc": "neverssl.com",
+    "path": "",
+    "query": ""
+  },
+  "network_analysis": {
+    "ip_addresses": [
+      "34.223.124.45"
+    ],
+    "geolocation": {
+      "ip": "34.223.124.45",
+      "country": "United States",
+      "region": "Oregon",
+      "city": "Portland",
+      "isp": "Amazon.com, Inc.",
+      "latitude": 45.5235,
+      "longitude": -122.676
+    },
+    "dns_info": {
+      "hostname": "neverssl.com",
+      "fqdn": "ec2-34-223-124-45.us-west-2.compute.amazonaws.com"
+    },
+    "cloud_provider": "Amazon AWS"
+  },
+  "security_analysis": {
+    "ssl_analysis": {
+      "has_ssl": false,
+      "risk": "No SSL/TLS encryption - data transmitted in plain text"
+    },
+    "security_headers": {
+      "security_score": 0,
+      "present_headers": [],
+      "missing_headers": [],
+      "recommendations": [],
+      "error": "HTTPConnectionPool(host='neverssl.com', port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000002D768D14910>, 'Connection to neverssl.com timed out. (connect timeout=10)'))"
+    },
+    "vulnerabilities": []
+  },
+  "risk_assessment": {
+    "risk_score": 45,
+    "risk_level": "MEDIUM",
+    "risk_factors": [
+      "No SSL/TLS encryption",
+      "Poor security headers implementation"
+    ],
+    "recommendation": "\u26a0\ufe0f MODERATE RISK: Some security concerns detected. Exercise caution when accessing."
+  },
+  "analysis_end": "2025-09-30T15:09:19.941334",
+  "analysis_duration": 42.364297
+}
