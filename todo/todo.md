@@ -168,8 +168,8 @@
 ## Implementation Priorities
 
 ### Phase 1: Core Functionality (High Priority)
-1. Complete Content Analyzer
-2. Implement Phishing Detector
+1. Implement Phishing Detector
+2. Complete Content Analyzer
 3. Implement Screenshot Collector
 4. Create PDF Reporter
 5. Implement IOC Extractor
@@ -202,11 +202,11 @@
 - `pyOpenSSL` for SSL/TLS analysis
 
 ### API Keys Required
-- VirusTotal API
-- URLVoid API
-- AbuseIPDB API
-- Censys API
-- SecurityTrails API
+- VirusTotal API - https://www.virustotal.com/
+- URLVoid API - https://urlvoid.com/
+- AbuseIPDB API - https://www.abuseipdb.com/
+- Censys API - https://censys.io/
+- SecurityTrails API - https://securitytrails.com/
 
 ## Testing Requirements
 
