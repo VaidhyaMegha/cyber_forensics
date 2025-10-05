@@ -312,20 +312,21 @@ We welcome contributions from the cybersecurity community:
 
 ---
 
-## 📚 **Resources**
+## 📚 **Documentation**
 
-### **Documentation**
-- [Installation Guide](docs/installation.md)
-- [API Reference](docs/api_reference.md)
-- [Analysis Modules](docs/modules.md)
-- [Reporting Guide](docs/reporting.md)
-- [Troubleshooting](docs/troubleshooting.md)
+### **Quick Start**
+- [Quick Start Guide](QUICK_START.md) - Get started in 5 minutes
 
-### **Training Materials**
-- [Phishing Analysis 101](training/phishing_basics.md)
-- [Advanced Forensics](training/advanced_techniques.md)
-- [Tool Usage Examples](training/examples.md)
-- [Case Studies](training/case_studies.md)
+### **Complete Documentation**
+- [Project Summary](docs/PROJECT_SUMMARY.md) - Technical overview
+- [Implementation Guide](docs/IMPLEMENTATION_GUIDE.md) - Complete technical guide
+- [FAQ](docs/FAQ.md) - Frequently asked questions
+- [Current Status](docs/CURRENT_STATUS.md) - What's working now
+- [Folder Structure](docs/FOLDER_STRUCTURE.md) - Directory organization
+
+### **Implementation Status**
+- [Implementation Status](todo/STATUS.md) - Detailed module status
+- [Documentation Audit](docs/DOCUMENTATION_AUDIT.md) - Documentation analysis
 
 ---
 

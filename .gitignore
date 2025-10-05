@@ -1,1 +1,10 @@
 __pycache__/
+tmp/*
+!tmp/README.md
+*.json
+!config/*.example
+reports/
+screenshots/
+forensics.log
+
+api_keys.json
