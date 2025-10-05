@@ -114,6 +114,7 @@ class SecurityAnalyzer:
                                 key = attr.oid._name
                             except:
                                 key = attr.oid.dotted_string
+                            issuer_dict[key] = attr.value
                     except Exception as e:
                         logger.debug(f"Certificate attribute parsing failed: {e}")
                         subject_dict = {'error': 'Could not parse subject'}
@@ -146,7 +147,7 @@ class SecurityAnalyzer:
                         result['certificate_valid'] = False
                     elif not_valid_before > now:
                         result['is_expired'] = False
-                        result['certificate_valid'] = False  # Not yet valid')
+                        result['certificate_valid'] = False  # Not yet valid
                     else:
                         result['certificate_valid'] = True
                     
