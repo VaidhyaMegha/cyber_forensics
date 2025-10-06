@@ -22,7 +22,7 @@ import json
 import logging
 import ssl
 import socket
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 from urllib.parse import urlparse
 
@@ -99,26 +99,55 @@ class SecurityAnalyzer:
                     cert = x509.load_der_x509_certificate(cert_der, default_backend())
                     
                     # Basic certificate information
+                    try:
+                        subject_dict = {}
+                        for attr in cert.subject:
+                            try:
+                                key = attr.oid._name
+                            except:
+                                key = attr.oid.dotted_string
+                            subject_dict[key] = attr.value
+                        
+                        issuer_dict = {}
+                        for attr in cert.issuer:
+                            try:
+                                key = attr.oid._name
+                            except:
+                                key = attr.oid.dotted_string
+                            issuer_dict[key] = attr.value
+                    except Exception as e:
+                        logger.debug(f"Certificate attribute parsing failed: {e}")
+                        subject_dict = {'error': 'Could not parse subject'}
+                        issuer_dict = {'error': 'Could not parse issuer'}
+                    
+                    # Use UTC-aware datetime methods
+                    try:
+                        not_valid_before = cert.not_valid_before.astimezone()
+                        not_valid_after = cert.not_valid_after.astimezone()
+                    except AttributeError:
+                        # Fallback for older cryptography versions
+                        not_valid_before = cert.not_valid_before
+                        not_valid_after = cert.not_valid_after
+                    
                     result['certificate_details'] = {
-                        'subject': dict((x509.NameOID._name_oid_map.get(attr.oid, attr.oid.dotted_string), attr.value) 
-                                      for attr in cert.subject),
-                        'issuer': dict((x509.NameOID._name_oid_map.get(attr.oid, attr.oid.dotted_string), attr.value) 
-                                     for attr in cert.issuer),
+                        'subject': subject_dict,
+                        'issuer': issuer_dict,
                         'serial_number': str(cert.serial_number),
                         'version': cert.version.name,
-                        'not_valid_before': cert.not_valid_before.isoformat(),
-                        'not_valid_after': cert.not_valid_after.isoformat(),
+                        'not_valid_before': not_valid_before.isoformat(),
+                        'not_valid_after': not_valid_after.isoformat(),
                         'signature_algorithm': cert.signature_algorithm_oid._name,
                         'public_key_algorithm': cert.public_key().__class__.__name__
                     }
                     
                     # Check certificate validity
-                    now = datetime.now()
-                    if cert.not_valid_after < now:
-                        result['certificate_expired'] = True
-                        result['trust_issues'].append('Certificate expired')
-                    elif cert.not_valid_before > now:
-                        result['trust_issues'].append('Certificate not yet valid')
+                    now = datetime.now(timezone.utc)
+                    if not_valid_after < now:
+                        result['is_expired'] = True
+                        result['certificate_valid'] = False
+                    elif not_valid_before > now:
+                        result['is_expired'] = False
+                        result['certificate_valid'] = False  # Not yet valid
                     else:
                         result['certificate_valid'] = True
                     
@@ -215,10 +244,18 @@ class SecurityAnalyzer:
         try:
             # Check issuer
             issuer_cn = None
-            for attr in cert.issuer:
-                if attr.oid == x509.NameOID.COMMON_NAME:
-                    issuer_cn = attr.value
-                    break
+            try:
+                for attr in cert.issuer:
+                    try:
+                        if attr.oid._name == 'commonName':
+                            issuer_cn = attr.value
+                            break
+                    except:
+                        if 'commonName' in str(attr.oid):
+                            issuer_cn = attr.value
+                            break
+            except Exception as e:
+                logger.debug(f"Issuer CN extraction failed: {e}")
             
             if issuer_cn:
                 result['certificate_details']['issuer_cn'] = issuer_cn

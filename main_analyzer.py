@@ -233,7 +233,9 @@ class CyberForensicsAnalyzer:
         
         try:
             # DNS analysis
-            dns_info = await self.dns_collector.collect_dns_info(url)
+            from urllib.parse import urlparse
+            domain = urlparse(url).netloc
+            dns_info = await self.network_analyzer.resolve_ip(domain)
             network_results['dns'] = dns_info
             
             # IP geolocation
@@ -267,7 +269,7 @@ class CyberForensicsAnalyzer:
         
         try:
             # SSL/TLS analysis
-            cert_info = await self.cert_collector.analyze_certificate(url)
+            cert_info = await self.security_analyzer.analyze_certificate(url)
             security_results['certificate'] = cert_info
             
             # Security headers analysis
@@ -291,16 +293,16 @@ class CyberForensicsAnalyzer:
         
         try:
             # HTML analysis
-            html_info = await self.content_analyzer.analyze_html(url)
+            html_info = await self.content_analyzer.analyze_content(url)
             content_results['html'] = html_info
             
-            # Resource analysis
-            resources = await self.resource_collector.collect_resources(url)
-            content_results['resources'] = resources
+            # Resource analysis (already included in analyze_content)
+            # resources = await self.resource_collector.collect_resources(url)
+            # content_results['resources'] = resources
             
-            # JavaScript analysis
-            js_info = await self.content_analyzer.analyze_javascript(url)
-            content_results['javascript'] = js_info
+            # JavaScript analysis (already included in analyze_content)
+            # js_info = await self.content_analyzer.analyze_javascript(url)
+            # content_results['javascript'] = js_info
             
         except Exception as e:
             logger.error(f"Content analysis failed: {e}")
@@ -314,17 +316,19 @@ class CyberForensicsAnalyzer:
         
         try:
             # WHOIS analysis
-            whois_info = await self.attribution_analyzer.get_whois_info(url)
+            from urllib.parse import urlparse
+            domain = urlparse(url).netloc
+            whois_info = await self.attribution_analyzer.analyze_domain(domain)
             attribution_results['whois'] = whois_info
             
             # Historical analysis
             if self.config.get('deep_scan'):
-                history_info = await self.attribution_analyzer.get_historical_data(url)
+                history_info = await self.attribution_analyzer.get_domain_history(domain)
                 attribution_results['history'] = history_info
             
-            # Similar domains
-            similar_domains = await self.attribution_analyzer.find_similar_domains(url)
-            attribution_results['similar_domains'] = similar_domains
+            # Similar domains (already included in analyze_domain)
+            # similar_domains = await self.attribution_analyzer._find_similar_domains(domain)
+            # attribution_results['similar_domains'] = similar_domains
             
         except Exception as e:
             logger.error(f"Attribution analysis failed: {e}")
@@ -363,20 +367,25 @@ class CyberForensicsAnalyzer:
         detection_results = {}
         
         try:
+            # Get content and attribution data for detection
+            content_data = self.results.get('content', {})
+            attribution_data = self.results.get('attribution', {})
+            threat_intel = self.results.get('threat_intelligence', {})
+            
             # Phishing detection
-            phishing_score = await self.phishing_detector.analyze(url)
+            phishing_score = await self.phishing_detector.detect_phishing(url, content_data, attribution_data)
             detection_results['phishing'] = phishing_score
             
             # Malware detection
-            malware_score = await self.malware_detector.analyze(url)
+            malware_score = await self.malware_detector.detect_malware(url, content_data, threat_intel)
             detection_results['malware'] = malware_score
             
             # Brand impersonation detection
-            brand_analysis = await self.brand_detector.analyze(url)
+            brand_analysis = await self.brand_detector.detect_brand(url, content_data)
             detection_results['brand_impersonation'] = brand_analysis
             
             # Phishing kit detection
-            kit_analysis = await self.kit_detector.analyze(url)
+            kit_analysis = await self.kit_detector.detect_phishing_kit(url, content_data)
             detection_results['phishing_kit'] = kit_analysis
             
         except Exception as e:
@@ -394,13 +403,13 @@ class CyberForensicsAnalyzer:
             screenshot_path = await self.screenshot_collector.capture_screenshot(url)
             evidence['screenshot'] = screenshot_path
             
-            # Page source
-            page_source = await self.content_analyzer.get_page_source(url)
-            evidence['page_source'] = page_source
+            # Page source - skip for now (requires additional implementation)
+            # page_source = await self.content_analyzer.get_page_source(url)
+            # evidence['page_source'] = page_source
             
-            # HTTP headers
-            headers = await self.content_analyzer.get_response_headers(url)
-            evidence['http_headers'] = headers
+            # HTTP headers - skip for now (requires additional implementation)
+            # headers = await self.content_analyzer.get_response_headers(url)
+            # evidence['http_headers'] = headers
             
         except Exception as e:
             logger.error(f"Evidence collection failed: {e}")
@@ -413,43 +422,87 @@ class CyberForensicsAnalyzer:
         risk_factors = []
         risk_score = 0
         
+        # Analyze threat intelligence (MOST IMPORTANT)
+        threat_intel = self.results.get('threat_intelligence', {})
+        if threat_intel:
+            threat_score = threat_intel.get('threat_score', 0)
+            is_malicious = threat_intel.get('is_malicious', False)
+            
+            if is_malicious:
+                risk_factors.append(f"⚠️ VirusTotal flagged as malicious (score: {threat_score}/100)")
+                risk_score += threat_score  # Use actual VirusTotal score
+            elif threat_score > 30:
+                risk_factors.append(f"⚠️ Suspicious threat intelligence score: {threat_score}/100")
+                risk_score += threat_score // 2  # Half weight for suspicious
+        
         # Analyze detection results
         detections = self.results.get('detections', {})
         
-        if detections.get('phishing', {}).get('is_phishing'):
-            risk_factors.append("Phishing patterns detected")
-            risk_score += 40
+        # Phishing detection
+        phishing = detections.get('phishing', {})
+        if phishing:
+            phishing_score = phishing.get('phishing_score', 0)
+            if phishing.get('is_phishing'):
+                risk_factors.append(f"🎣 Phishing detected (score: {phishing_score}/100)")
+                risk_score += phishing_score // 2  # Add half of phishing score
+            elif phishing_score > 30:
+                risk_factors.append(f"⚠️ Suspicious phishing indicators (score: {phishing_score}/100)")
+                risk_score += phishing_score // 3
         
-        if detections.get('malware', {}).get('is_malicious'):
-            risk_factors.append("Malware detected")
+        # Malware detection
+        malware = detections.get('malware', {})
+        if malware and malware.get('is_malicious'):
+            risk_factors.append("🦠 Malware detected")
             risk_score += 50
         
-        if detections.get('brand_impersonation', {}).get('is_impersonation'):
-            risk_factors.append("Brand impersonation detected")
+        # Brand impersonation
+        brand = detections.get('brand_impersonation', {})
+        if brand and brand.get('is_impersonation'):
+            brand_name = brand.get('brand_detected', 'unknown')
+            risk_factors.append(f"🏢 Brand impersonation: {brand_name}")
             risk_score += 30
         
         # Analyze security issues
         security = self.results.get('security', {})
         
-        if security.get('certificate', {}).get('is_expired'):
-            risk_factors.append("Expired SSL certificate")
-            risk_score += 20
-        
-        if not security.get('headers', {}).get('has_security_headers'):
-            risk_factors.append("Missing security headers")
-            risk_score += 10
+        if security:
+            cert = security.get('certificate', {})
+            if cert.get('is_expired'):
+                risk_factors.append("🔒 Expired SSL certificate")
+                risk_score += 20
+            elif not cert.get('certificate_valid'):
+                risk_factors.append("🔒 Invalid SSL certificate")
+                risk_score += 15
+            
+            headers = security.get('headers', {})
+            if headers and not headers.get('has_security_headers'):
+                risk_factors.append("📋 Missing security headers")
+                risk_score += 10
         
         # Analyze attribution
         attribution = self.results.get('attribution', {})
         
-        if attribution.get('whois', {}).get('privacy_protected'):
-            risk_factors.append("Domain privacy protection enabled")
-            risk_score += 15
-        
-        domain_age = attribution.get('whois', {}).get('domain_age_days', 0)
-        if domain_age < 30:
-            risk_factors.append("Recently registered domain")
-            risk_score += 25
+        if attribution:
+            whois_data = attribution.get('whois', {})
+            
+            # Check domain age
+            domain_age_info = whois_data.get('domain_age', {})
+            if domain_age_info:
+                age_days = domain_age_info.get('age_days', 999)
+                is_new = domain_age_info.get('is_new', False)
+                
+                if is_new or age_days < 30:
+                    risk_factors.append(f"🆕 Very new domain ({age_days} days old)")
+                    risk_score += 25
+                elif age_days < 180:
+                    risk_factors.append(f"📅 Recently registered domain ({age_days} days old)")
+                    risk_score += 15
+            
+            # Check privacy protection
+            registrant = whois_data.get('registrant_info', {})
+            if registrant and registrant.get('privacy_protected'):
+                risk_factors.append("🔐 Domain privacy protection enabled")
+                risk_score += 10
         
         # Determine risk level
         if risk_score >= 80:
@@ -488,25 +541,26 @@ class CyberForensicsAnalyzer:
             formats = ['html', 'json']
         
         output_path = Path(output_dir)
-        output_path.mkdir(exist_ok=True)
+        output_path.mkdir(parents=True, exist_ok=True)
         
         report_files = {}
         
         try:
             if 'html' in formats:
-                html_file = await self.html_reporter.generate_report(self.results, output_path)
+                html_file = self.html_reporter.generate_report(self.results, output_path)
                 report_files['html'] = html_file
             
             if 'pdf' in formats:
-                pdf_file = await self.pdf_reporter.generate_report(self.results, output_path)
+                pdf_file = self.pdf_reporter.generate_report(self.results, output_path)
                 report_files['pdf'] = pdf_file
             
             if 'json' in formats:
-                json_file = await self.json_exporter.export_results(self.results, output_path)
+                json_file = self.json_exporter.export_data(self.results, output_path)
                 report_files['json'] = json_file
             
             # Always generate IOCs
-            ioc_file = await self.ioc_extractor.extract_iocs(self.results, output_path)
+            iocs = self.ioc_extractor.extract_iocs(self.results)
+            ioc_file = self.ioc_extractor.export_csv_format(iocs, output_path / 'iocs.csv')
             report_files['iocs'] = ioc_file
             
         except Exception as e:
