@@ -38,7 +38,7 @@ async def test_virustotal():
     # ============================================
     # CHANGE THIS URL TO ANALYZE ANY WEBSITE
     # ============================================
-    url = "https://axn.bappam.eu/telugu-movies/"
+    url = "https://www.google.com/"
     
     # You can also test with these:
     # url = "http://neverssl.com"

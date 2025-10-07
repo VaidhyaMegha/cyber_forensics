@@ -10,7 +10,7 @@
 **Contact:** madhulatha@samyama.ai  
 **License:** Proprietary - All Rights Reserved  
 **Version:** 1.0.0  
-**Last Updated:** August 2025
+**Last Updated:** October 2025
 
 ---
 
@@ -314,19 +314,27 @@ We welcome contributions from the cybersecurity community:
 
 ## 📚 **Documentation**
 
-### **Quick Start**
-- [Quick Start Guide](QUICK_START.md) - Get started in 5 minutes
+### **📖 Complete Documentation**
+- **[📚 Complete Documentation](docs/DOCUMENTATION.md)** - **All-in-one comprehensive guide**
+  - Project overview and architecture
+  - Quick start and installation
+  - Implementation details for all modules
+  - Current status and working features
+  - FAQ and troubleshooting
+  - Folder structure and organization
+  - Legal and ethical guidelines
 
-### **Complete Documentation**
+### **🚀 Quick References**
+- [Quick Start Guide](QUICK_START.md) - Get started in 5 minutes
+- [Implementation Status](todo/STATUS.md) - Detailed module completion status
+
+### **📂 Additional Documentation**
+For those who prefer separate documents, individual guides are available in the `docs/` folder:
 - [Project Summary](docs/PROJECT_SUMMARY.md) - Technical overview
 - [Implementation Guide](docs/IMPLEMENTATION_GUIDE.md) - Complete technical guide
 - [FAQ](docs/FAQ.md) - Frequently asked questions
 - [Current Status](docs/CURRENT_STATUS.md) - What's working now
 - [Folder Structure](docs/FOLDER_STRUCTURE.md) - Directory organization
-
-### **Implementation Status**
-- [Implementation Status](todo/STATUS.md) - Detailed module status
-- [Documentation Audit](docs/DOCUMENTATION_AUDIT.md) - Documentation analysis
 
 ---
 
