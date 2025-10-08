@@ -23,6 +23,7 @@ import json
 import logging
 import sys
 import time
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
@@ -119,10 +120,18 @@ class CyberForensicsAnalyzer:
             'deep_scan': False
         }
         
-        if config_path and Path(config_path).exists():
+        # Automatically load api_keys.json if it exists and no specific config is provided
+        if not config_path:
+            config_path = 'api_keys.json'
+
+        if Path(config_path).exists():
             try:
                 with open(config_path, 'r') as f:
                     user_config = json.load(f)
+                    # Deep merge api_keys
+                    if 'api_keys' in user_config:
+                        default_config['api_keys'].update(user_config['api_keys'])
+                        del user_config['api_keys']
                     default_config.update(user_config)
             except Exception as e:
                 logger.warning(f"Failed to load config from {config_path}: {e}")
@@ -341,20 +350,28 @@ class CyberForensicsAnalyzer:
         threat_results = {}
         
         try:
-            # VirusTotal analysis
+            # Run all threat intel analyses concurrently
+            tasks = {}
+
             if self.config.get('api_keys', {}).get('virustotal'):
-                vt_info = await self.threat_intel.check_virustotal(url)
-                threat_results['virustotal'] = vt_info
-            
-            # URLVoid analysis
-            if self.config.get('api_keys', {}).get('urlvoid'):
-                urlvoid_info = await self.threat_intel.check_urlvoid(url)
-                threat_results['urlvoid'] = urlvoid_info
-            
-            # AbuseIPDB analysis
-            if self.config.get('api_keys', {}).get('abuseipdb'):
-                abuse_info = await self.threat_intel.check_abuseipdb(url)
-                threat_results['abuseipdb'] = abuse_info
+                tasks['url_analysis'] = self.threat_intel.analyze_url(url)
+
+            if self.config.get('api_keys', {}).get('netlas'):
+                tasks['domain_analysis'] = self.threat_intel.analyze_domain(url)
+
+            # You can add IP analysis here if an IP is available
+            # For now, we focus on URL and Domain
+
+            results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+
+            # Process results
+            task_keys = list(tasks.keys())
+            for i, result in enumerate(results):
+                if not isinstance(result, Exception):
+                    if task_keys[i] == 'url_analysis':
+                        threat_results['virustotal'] = result
+                    elif task_keys[i] == 'domain_analysis':
+                        threat_results['netlas'] = result
             
         except Exception as e:
             logger.error(f"Threat intelligence analysis failed: {e}")
@@ -547,7 +564,7 @@ class CyberForensicsAnalyzer:
         
         try:
             if 'html' in formats:
-                html_file = self.html_reporter.generate_report(self.results, output_path)
+                html_file = self.html_reporter.generate_report(self.results)
                 report_files['html'] = html_file
             
             if 'pdf' in formats:
@@ -656,6 +673,14 @@ Examples:
                 
                 print(f"\n💡 Recommendation: {risk_assessment.get('recommendation', 'N/A')}")
                 print()
+
+                # Automatically open the HTML report if it was generated
+                if 'html' in report_files and report_files['html']:
+                    try:
+                        webbrowser.open(f"file://{Path(report_files['html']).resolve()}")
+                        logger.info(f"Opened HTML report in browser: {report_files['html']}")
+                    except Exception as e:
+                        logger.warning(f"Could not open HTML report in browser: {e}")
                 
             except Exception as e:
                 logger.error(f"Analysis failed for {url}: {e}")

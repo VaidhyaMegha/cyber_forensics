@@ -92,7 +92,7 @@ cyber_forensics/
 - **URLVoid API**: Multi-engine URL reputation
 - **AbuseIPDB**: IP reputation and abuse reports
 - **Censys API**: Internet-wide scanning data
-- **SecurityTrails API**: DNS and domain intelligence
+- **Netlas.io API**: Domain, DNS, and internet-wide scan intelligence
 
 ---
 
@@ -217,7 +217,7 @@ python main_analyzer.py \
     "api_id": "your_censys_id",
     "api_secret": "your_censys_secret"
   },
-  "securitytrails": "your_st_api_key"
+  "netlas": "your_netlas_api_key"
 }
 ```
 
