@@ -95,7 +95,7 @@ class ThreatIntelligence:
             if parsed_url.netloc:
                 domain = parsed_url.netloc
         except Exception:
-            pass # Assume it's already a domain
+            pass  # Assume it's already a domain
         result = {
             'domain': domain,
             'virustotal': {},

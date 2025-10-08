@@ -41,7 +41,7 @@ async def test_netlas():
     # ===============================================
     # CHANGE THIS DOMAIN TO ANALYZE ANY WEBSITE
     # ===============================================
-    domain = "https://samyama.ai/"
+    domain = "https://example.com/"
     
     print("=" * 70)
     print("🔍 Netlas.io Domain Analysis")
