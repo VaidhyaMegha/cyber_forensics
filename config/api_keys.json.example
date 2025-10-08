@@ -7,7 +7,7 @@
     "api_id": "your_censys_api_id_here",
     "api_secret": "your_censys_api_secret_here"
   },
-  "securitytrails": "your_securitytrails_api_key_here",
+  "netlas": "your_netlas_api_key_here",
   "ipinfo": "your_ipinfo_token_here",
   "maxmind": {
     "license_key": "your_maxmind_license_key_here",

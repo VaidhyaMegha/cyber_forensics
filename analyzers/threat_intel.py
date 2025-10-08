@@ -28,6 +28,8 @@ import base64
 
 try:
     import requests
+    from netlas import Netlas
+    from netlas.exception import APIError
 except ImportError as e:
     logging.warning(f"Some threat intelligence dependencies not available: {e}")
 
@@ -49,6 +51,7 @@ class ThreatIntelligence:
         self.virustotal_key = self.api_keys.get('virustotal')
         self.urlvoid_key = self.api_keys.get('urlvoid')
         self.abuseipdb_key = self.api_keys.get('abuseipdb')
+        self.netlas_key = self.api_keys.get('netlas')
         
         # API endpoints
         self.virustotal_url_api = "https://www.virustotal.com/api/v3/urls"
@@ -86,9 +89,18 @@ class ThreatIntelligence:
     
     async def analyze_domain(self, domain: str) -> Dict[str, Any]:
         """Analyze domain reputation."""
+        
+        # Extract domain if a full URL is provided
+        try:
+            parsed_url = urlparse(domain)
+            if parsed_url.netloc:
+                domain = parsed_url.netloc
+        except Exception:
+            pass  # Assume it's already a domain
         result = {
             'domain': domain,
             'virustotal': {},
+            'netlas': {},
             'threat_score': 0,
             'is_malicious': False,
             'categories': [],
@@ -96,11 +108,27 @@ class ThreatIntelligence:
         }
         
         try:
+            tasks = []
             if self.virustotal_key:
-                result['virustotal'] = await self._check_virustotal_domain(domain)
-                
-                # Extract key information
-                if 'data' in result['virustotal']:
+                tasks.append(self._check_virustotal_domain(domain))
+            else:
+                tasks.append(asyncio.sleep(0))
+
+            if self.netlas_key:
+                tasks.append(self._check_netlas_domain(domain))
+            else:
+                tasks.append(asyncio.sleep(0))
+
+            vt_result, netlas_result = await asyncio.gather(*tasks, return_exceptions=True)
+
+            if not isinstance(vt_result, Exception) and vt_result:
+                result['virustotal'] = vt_result
+
+            if not isinstance(netlas_result, Exception) and netlas_result:
+                result['netlas'] = netlas_result
+
+            # Extract key information
+            if 'data' in result.get('virustotal', {}):
                     data = result['virustotal']['data']
                     attributes = data.get('attributes', {})
                     
@@ -288,6 +316,33 @@ class ThreatIntelligence:
             logger.error(f"VirusTotal IP check failed: {e}")
             result['error'] = str(e)
         
+        return result
+
+    async def _check_netlas_domain(self, domain: str) -> Dict[str, Any]:
+        """Get domain details from Netlas.io."""
+        result = {
+            'available': False,
+            'data': {},
+            'error': None
+        }
+
+        if not self.netlas_key:
+            result['error'] = 'Netlas.io API key not configured'
+            return result
+
+        try:
+            netlas_connection = Netlas(api_key=self.netlas_key)
+            loop = asyncio.get_running_loop()
+            netlas_data = await loop.run_in_executor(None, netlas_connection.host, domain)
+            result['available'] = True
+            result['data'] = netlas_data
+        except APIError as e:
+            logger.error(f"Netlas.io API error. This is likely due to an invalid API key. Error: {e}")
+            result['error'] = 'Netlas.io API key is invalid or has expired.'
+        except Exception as e:
+            logger.error(f"Netlas.io domain check failed: {e}", exc_info=True)
+            result['error'] = f"An exception occurred: {type(e).__name__} - {e}"
+
         return result
     
     async def _check_abuseipdb(self, ip: str) -> Dict[str, Any]:

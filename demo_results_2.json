@@ -1,10 +1,6 @@
 {
   "target_url": "http://neverssl.com",
-<<<<<<< HEAD
-  "analysis_start": "2025-08-03T12:13:51.556056",
-=======
-  "analysis_start": "2025-09-30T15:08:37.577037",
->>>>>>> 9a69de8bb4e57a122e9b224c7e19145b4a86a54a
+  "analysis_start": "2025-10-08T17:13:29.299940",
   "parsed_url": {
     "scheme": "http",
     "netloc": "neverssl.com",
@@ -38,7 +34,6 @@
     "security_headers": {
       "security_score": 0,
       "present_headers": [],
-<<<<<<< HEAD
       "missing_headers": [
         "Strict-Transport-Security",
         "Content-Security-Policy",
@@ -54,11 +49,6 @@
         "Add XSS Protection (X-XSS-Protection)",
         "Consider hiding Server header"
       ]
-=======
-      "missing_headers": [],
-      "recommendations": [],
-      "error": "HTTPConnectionPool(host='neverssl.com', port=80): Max retries exceeded with url: / (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x000002D768D14910>, 'Connection to neverssl.com timed out. (connect timeout=10)'))"
->>>>>>> 9a69de8bb4e57a122e9b224c7e19145b4a86a54a
     },
     "vulnerabilities": []
   },
@@ -71,11 +61,6 @@
     ],
     "recommendation": "\u26a0\ufe0f MODERATE RISK: Some security concerns detected. Exercise caution when accessing."
   },
-<<<<<<< HEAD
-  "analysis_end": "2025-08-03T12:14:27.437455",
-  "analysis_duration": 35.881399
-=======
-  "analysis_end": "2025-09-30T15:09:19.941334",
-  "analysis_duration": 42.364297
->>>>>>> 9a69de8bb4e57a122e9b224c7e19145b4a86a54a
+  "analysis_end": "2025-10-08T17:13:53.930664",
+  "analysis_duration": 24.630724
 }

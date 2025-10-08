@@ -42,7 +42,7 @@ shodan>=1.29.0
 virustotal-api>=1.1.11
 abuseipdb-wrapper
 censys>=2.2.0
-#securitytrails>=1.0.0
+netlas
 
 # Network scanning and analysis
 python-nmap>=0.7.1
