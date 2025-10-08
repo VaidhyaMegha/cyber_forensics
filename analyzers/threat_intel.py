@@ -29,6 +29,7 @@ import base64
 try:
     import requests
     from netlas import Netlas
+    from netlas.exception import APIError
 except ImportError as e:
     logging.warning(f"Some threat intelligence dependencies not available: {e}")
 
@@ -335,6 +336,9 @@ class ThreatIntelligence:
             netlas_data = await loop.run_in_executor(None, netlas_connection.host, domain)
             result['available'] = True
             result['data'] = netlas_data
+        except APIError as e:
+            logger.error(f"Netlas.io API error. This is likely due to an invalid API key. Error: {e}")
+            result['error'] = 'Netlas.io API key is invalid or has expired.'
         except Exception as e:
             logger.error(f"Netlas.io domain check failed: {e}", exc_info=True)
             result['error'] = f"An exception occurred: {type(e).__name__} - {e}"
