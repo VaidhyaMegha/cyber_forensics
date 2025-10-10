@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forensic Analysis Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; color: #333; }
+        .container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h1 { color: #0056b3; }
+        h2 { color: #007bff; }
+        .section { margin-bottom: 20px; }
+        .card { background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 10px; }
+        .card h3 { margin-top: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; }
+        .risk-critical { color: #dc3545; font-weight: bold; }
+        .risk-high { color: #ffc107; }
+        .risk-medium { color: #fd7e14; }
+        .risk-low { color: #28a745; }
+        .risk-minimal { color: #17a2b8; }
+        .code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Forensic Analysis Report</h1>
+        <p><strong>Target URL:</strong> <a href="{{ target_url }}">{{ target_url }}</a></p>
+        <p><strong>Analysis Date:</strong> {{ analysis_start }}</p>
+
+        <div class="section">
+            <h2>Risk Assessment</h2>
+            <div class="card">
+                <p><strong>Risk Level:</strong> <span class="risk-{{ risk_assessment.risk_level|lower }}">{{ risk_assessment.risk_level }}</span></p>
+                <p><strong>Risk Score:</strong> {{ risk_assessment.risk_score }}/100</p>
+                <h3>Risk Factors:</h3>
+                <ul>
+                    {% for factor in risk_assessment.risk_factors %}
+                        <li>{{ factor }}</li>
+                    {% endfor %}
+                </ul>
+                <h3>Recommendation:</h3>
+                <p>{{ risk_assessment.recommendation }}</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Network Intelligence</h2>
+            <div class="card">
+                <h3>DNS Information</h3>
+                <table>
+                    <tr><th>Domain</th><td>{{ network.get('dns', {}).get('domain', 'N/A') }}</td></tr>
+                    <tr><th>IPv4 Addresses</th><td>{{ network.get('dns', {}).get('ipv4_addresses', [])|join(', ') or 'N/A' }}</td></tr>
+                    <tr><th>IPv6 Addresses</th><td>{{ network.get('dns', {}).get('ipv6_addresses', [])|join(', ') or 'N/A' }}</td></tr>
+                    <tr><th>MX Records</th><td>
+                        <ul>
+                        {% for record in network.get('dns', {}).get('mx_records', []) %}
+                            <li>{{ record.priority }} {{ record.exchange }}</li>
+                        {% endfor %}
+                        </ul>
+                    </td></tr>
+                    <tr><th>NS Records</th><td>{{ network.get('dns', {}).get('ns_records', [])|join(', ') or 'N/A' }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Security Analysis</h2>
+            <div class="card">
+                <h3>SSL/TLS Certificate</h3>
+                <table>
+                    <tr><th>Has SSL</th><td>{{ security.certificate.has_ssl }}</td></tr>
+                    <tr><th>Valid</th><td>{{ security.certificate.certificate_valid }}</td></tr>
+                    <tr><th>Expired</th><td>{{ security.certificate.certificate_expired }}</td></tr>
+                    <tr><th>Issuer</th><td>{{ security.certificate.certificate_details.issuer.organizationName }}</td></tr>
+                    <tr><th>Valid From</th><td>{{ security.certificate.certificate_details.not_valid_before }}</td></tr>
+                    <tr><th>Valid Until</th><td>{{ security.certificate.certificate_details.not_valid_after }}</td></tr>
+                </table>
+            </div>
+            <div class="card">
+                <h3>Security Headers</h3>
+                <table>
+                    <tr><th>Missing Headers</th><td>{{ security.headers.missing_headers|join(', ') }}</td></tr>
+                    <tr><th>Security Score</th><td>{{ security.headers.security_score_percentage }}%</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Attribution Analysis</h2>
+            <div class="card">
+                <h3>WHOIS Information</h3>
+                <table>
+                    <tr><th>Registrar</th><td>{{ attribution.whois.whois_data.registrar }}</td></tr>
+                    <tr><th>Creation Date</th><td>{{ attribution.whois.whois_data.creation_date }}</td></tr>
+                    <tr><th>Expiration Date</th><td>{{ attribution.whois.whois_data.expiration_date }}</td></tr>
+                    <tr><th>Domain Age</th><td>{{ attribution.whois.domain_age.age_days }} days</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Threat Intelligence</h2>
+            {% if threat_intelligence.virustotal and threat_intelligence.virustotal.available %}
+            <div class="card">
+                <h3>VirusTotal</h3>
+                <p><strong>Malicious Detections:</strong> {{ threat_intelligence.virustotal.data.data.attributes.last_analysis_stats.malicious }}</p>
+                <p><strong>Suspicious Detections:</strong> {{ threat_intelligence.virustotal.data.data.attributes.last_analysis_stats.suspicious }}</p>
+            </div>
+            {% else %}
+            <div class="card">
+                <h3>VirusTotal</h3>
+                <p>Data not available or API key not configured.</p>
+            </div>
+            {% endif %}
+
+            {% if threat_intelligence.netlas and threat_intelligence.netlas.available %}
+            <div class="card">
+                <h3>Netlas.io Domain Intelligence</h3>
+                {% set netlas_data = threat_intelligence.netlas.data %}
+                {% if netlas_data %}
+                    <p><strong>IP Address:</strong> {{ netlas_data.get('ip', 'N/A') }}</p>
+                    {% if netlas_data.get('geo') %}
+                    <p><strong>Location:</strong> {{ netlas_data.geo.get('city', 'N/A') }}, {{ netlas_data.geo.get('country', 'N/A') }}</p>
+                    {% endif %}
+                    {% if netlas_data.get('as_name') %}
+                    <p><strong>Hosting Provider:</strong> {{ netlas_data.as_name }}</p>
+                    {% endif %}
+                    {% if netlas_data.get('ports') %}
+                    <p><strong>Open Ports:</strong> {{ netlas_data.ports|join(', ') }}</p>
+                    {% endif %}
+                    {% if netlas_data.get('http') and netlas_data.http.get('title') %}
+                    <p><strong>Page Title:</strong> {{ netlas_data.http.title }}</p>
+                    {% endif %}
+                    {% if netlas_data.get('certificate') %}
+                    <p><strong>SSL Certificate:</strong> Issued by {{ netlas_data.certificate.get('issuer', {}).get('common_name', 'N/A') }}</p>
+                    {% endif %}
+                    <p><em>Additional detailed data available in JSON export.</em></p>
+                {% else %}
+                    <p>Data retrieved but structure is empty.</p>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="card">
+                <h3>Netlas.io</h3>
+                <p>Data not available or API key not configured.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</body>
+</html>
