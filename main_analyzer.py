@@ -120,9 +120,9 @@ class CyberForensicsAnalyzer:
             'deep_scan': False
         }
         
-        # Automatically load api_keys.json if it exists and no specific config is provided
+        # Automatically load config/api_keys.json if it exists and no specific config is provided
         if not config_path:
-            config_path = 'api_keys.json'
+            config_path = 'config/api_keys.json'
 
         if Path(config_path).exists():
             try:
@@ -369,9 +369,11 @@ class CyberForensicsAnalyzer:
             for i, result in enumerate(results):
                 if not isinstance(result, Exception):
                     if task_keys[i] == 'url_analysis':
-                        threat_results['virustotal'] = result
+                        # Merge URL analysis results (contains virustotal data)
+                        threat_results.update(result)
                     elif task_keys[i] == 'domain_analysis':
-                        threat_results['netlas'] = result
+                        # Merge domain analysis results (contains netlas data)
+                        threat_results.update(result)
             
         except Exception as e:
             logger.error(f"Threat intelligence analysis failed: {e}")

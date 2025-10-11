@@ -46,7 +46,8 @@ class SecurityAnalyzer:
         self.timeout = config.get('timeouts', {}).get('security', 60)
         self.session = requests.Session()
         self.session.timeout = self.timeout
-        self.session.verify = config.get('verify_ssl', False)
+        # Always verify SSL for security analysis to avoid InsecureRequestWarning
+        self.session.verify = True
         
         # Security headers to check
         self.security_headers = {
@@ -61,143 +62,66 @@ class SecurityAnalyzer:
         }
     
     async def analyze_certificate(self, url: str) -> Dict[str, Any]:
-        """Analyze SSL/TLS certificate."""
+        """Analyze SSL/TLS certificate using modern and secure methods."""
         result = {
             'url': url,
             'has_ssl': False,
             'certificate_valid': False,
             'certificate_expired': False,
             'certificate_details': {},
-            'certificate_chain': [],
-            'vulnerabilities': [],
             'trust_issues': []
         }
-        
+
+        parsed_url = urlparse(url)
+        hostname = parsed_url.netloc
+        if not hostname or parsed_url.scheme != 'https':
+            result['trust_issues'].append('No SSL/TLS encryption')
+            return result
+
+        result['has_ssl'] = True
+        context = ssl.create_default_context()
+
         try:
-            parsed_url = urlparse(url)
-            hostname = parsed_url.netloc
-            port = 443 if parsed_url.scheme == 'https' else 80
-            
-            if parsed_url.scheme != 'https':
-                result['has_ssl'] = False
-                result['trust_issues'].append('No SSL/TLS encryption')
-                return result
-            
-            result['has_ssl'] = True
-            
-            # Get certificate
-            context = ssl.create_default_context()
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
-            
-            with socket.create_connection((hostname, port), timeout=self.timeout) as sock:
+            with socket.create_connection((hostname, 443), timeout=self.timeout) as sock:
                 with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                     cert_der = ssock.getpeercert(binary_form=True)
-                    cert_info = ssock.getpeercert()
-                    
-                    # Parse certificate
                     cert = x509.load_der_x509_certificate(cert_der, default_backend())
-                    
-                    # Basic certificate information
-                    try:
-                        subject_dict = {}
-                        for attr in cert.subject:
-                            try:
-                                key = attr.oid._name
-                            except:
-                                key = attr.oid.dotted_string
-                            subject_dict[key] = attr.value
-                        
-                        issuer_dict = {}
-                        for attr in cert.issuer:
-                            try:
-                                key = attr.oid._name
-                            except:
-                                key = attr.oid.dotted_string
-                            issuer_dict[key] = attr.value
-                    except Exception as e:
-                        logger.debug(f"Certificate attribute parsing failed: {e}")
-                        subject_dict = {'error': 'Could not parse subject'}
-                        issuer_dict = {'error': 'Could not parse issuer'}
-                    
-                    # Use UTC-aware datetime methods
-                    try:
-                        not_valid_before = cert.not_valid_before.astimezone()
-                        not_valid_after = cert.not_valid_after.astimezone()
-                    except AttributeError:
-                        # Fallback for older cryptography versions
-                        not_valid_before = cert.not_valid_before
-                        not_valid_after = cert.not_valid_after
-                    
-                    result['certificate_details'] = {
-                        'subject': subject_dict,
-                        'issuer': issuer_dict,
-                        'serial_number': str(cert.serial_number),
-                        'version': cert.version.name,
-                        'not_valid_before': not_valid_before.isoformat(),
-                        'not_valid_after': not_valid_after.isoformat(),
-                        'signature_algorithm': cert.signature_algorithm_oid._name,
-                        'public_key_algorithm': cert.public_key().__class__.__name__
-                    }
-                    
-                    # Check certificate validity
-                    now = datetime.now(timezone.utc)
-                    if not_valid_after < now:
-                        result['is_expired'] = True
-                        result['certificate_valid'] = False
-                    elif not_valid_before > now:
-                        result['is_expired'] = False
-                        result['certificate_valid'] = False  # Not yet valid
+
+                    not_valid_before_utc = cert.not_valid_before_utc
+                    not_valid_after_utc = cert.not_valid_after_utc
+
+                    now_utc = datetime.now(timezone.utc)
+                    if not_valid_after_utc < now_utc:
+                        result['certificate_expired'] = True
+                    if not_valid_before_utc > now_utc:
+                        result['certificate_valid'] = False # Not yet valid
                     else:
                         result['certificate_valid'] = True
-                    
-                    # Check certificate chain
-                    result['certificate_chain'] = await self._analyze_certificate_chain(hostname, port)
-                    
-                    # Check for common vulnerabilities
-                    result['vulnerabilities'] = await self._check_ssl_vulnerabilities(hostname, port)
-                    
-                    # Analyze certificate trust
-                    await self._analyze_certificate_trust(cert, result)
-        
+
+                    subject = {attr.oid._name: attr.value for attr in cert.subject}
+                    issuer = {attr.oid._name: attr.value for attr in cert.issuer}
+
+                    result['certificate_details'] = {
+                        'subject': subject,
+                        'issuer': issuer,
+                        'serial_number': str(cert.serial_number),
+                        'version': str(cert.version),
+                        'not_valid_before': not_valid_before_utc.isoformat(),
+                        'not_valid_after': not_valid_after_utc.isoformat(),
+                        'signature_algorithm': cert.signature_hash_algorithm.name if cert.signature_hash_algorithm else 'N/A',
+                    }
+
+        except ssl.SSLCertVerificationError as e:
+            result['certificate_valid'] = False
+            result['trust_issues'].append(f"Certificate verification failed: {e.reason}")
+        except (socket.gaierror, socket.timeout, ConnectionRefusedError, OSError) as e:
+            result['error'] = f"Could not connect to {hostname}: {e}"
         except Exception as e:
-            logger.error(f"Certificate analysis failed: {e}")
-            result['error'] = str(e)
+            logger.error(f"Certificate analysis failed unexpectedly: {e}", exc_info=True)
+            result['error'] = f"An unexpected error occurred: {e}"
         
         return result
-    
-    async def _analyze_certificate_chain(self, hostname: str, port: int) -> List[Dict[str, Any]]:
-        """Analyze the certificate chain."""
-        chain = []
         
-        try:
-            # Use OpenSSL to get full certificate chain
-            context = ssl.create_default_context()
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
-            
-            with socket.create_connection((hostname, port), timeout=self.timeout) as sock:
-                with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                    peer_cert_chain = ssock.getpeercert_chain()
-                    
-                    if peer_cert_chain:
-                        for i, cert in enumerate(peer_cert_chain):
-                            cert_info = {
-                                'position': i,
-                                'subject': cert.get_subject().get_components(),
-                                'issuer': cert.get_issuer().get_components(),
-                                'serial_number': str(cert.get_serial_number()),
-                                'not_before': cert.get_notBefore().decode('utf-8'),
-                                'not_after': cert.get_notAfter().decode('utf-8'),
-                                'signature_algorithm': cert.get_signature_algorithm().decode('utf-8')
-                            }
-                            chain.append(cert_info)
-        
-        except Exception as e:
-            logger.debug(f"Certificate chain analysis failed: {e}")
-        
-        return chain
-    
     async def _check_ssl_vulnerabilities(self, hostname: str, port: int) -> List[str]:
         """Check for SSL/TLS vulnerabilities."""
         vulnerabilities = []
@@ -335,6 +259,9 @@ class SecurityAnalyzer:
             # Calculate final security score
             max_score = len(self.security_headers) * 10
             result['security_score_percentage'] = (result['security_score'] / max_score) * 100
+            # Check if any of the important security headers are present
+            important_headers = ['strict-transport-security', 'content-security-policy', 'x-frame-options']
+            result['has_security_headers'] = any(h in result['security_headers'] for h in important_headers)
         
         except Exception as e:
             logger.error(f"Header analysis failed: {e}")
