@@ -98,8 +98,14 @@ class SecurityAnalyzer:
                     else:
                         result['certificate_valid'] = True
 
-                    subject = {attr.oid._name: attr.value for attr in cert.subject}
-                    issuer = {attr.oid._name: attr.value for attr in cert.issuer}
+                    def get_attr_name(attr):
+                        try:
+                            return attr.oid._name
+                        except AttributeError:
+                            return attr.oid.dotted_string
+
+                    subject = {get_attr_name(attr): attr.value for attr in cert.subject}
+                    issuer = {get_attr_name(attr): attr.value for attr in cert.issuer}
 
                     result['certificate_details'] = {
                         'subject': subject,
