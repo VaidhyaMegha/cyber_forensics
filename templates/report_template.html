@@ -74,7 +74,7 @@
                     <tr><th>Has SSL</th><td>{{ security.certificate.has_ssl }}</td></tr>
                     <tr><th>Valid</th><td>{{ security.certificate.certificate_valid }}</td></tr>
                     <tr><th>Expired</th><td>{{ security.certificate.certificate_expired }}</td></tr>
-                    <tr><th>Issuer</th><td>{{ security.certificate.certificate_details.issuer.organizationName }}</td></tr>
+                    <tr><th>Issuer</th><td>{{ security.certificate.certificate_details.get('issuer', {}).get('organizationName', 'N/A') }}</td></tr>
                     <tr><th>Valid From</th><td>{{ security.certificate.certificate_details.not_valid_before }}</td></tr>
                     <tr><th>Valid Until</th><td>{{ security.certificate.certificate_details.not_valid_after }}</td></tr>
                 </table>
@@ -93,10 +93,10 @@
             <div class="card">
                 <h3>WHOIS Information</h3>
                 <table>
-                    <tr><th>Registrar</th><td>{{ attribution.whois.whois_data.registrar }}</td></tr>
-                    <tr><th>Creation Date</th><td>{{ attribution.whois.whois_data.creation_date }}</td></tr>
-                    <tr><th>Expiration Date</th><td>{{ attribution.whois.whois_data.expiration_date }}</td></tr>
-                    <tr><th>Domain Age</th><td>{{ attribution.whois.domain_age.age_days }} days</td></tr>
+                    <tr><th>Registrar</th><td>{{ attribution.get('whois', {}).get('whois_data', {}).get('registrar', 'N/A') }}</td></tr>
+                    <tr><th>Creation Date</th><td>{{ attribution.get('whois', {}).get('whois_data', {}).get('creation_date', 'N/A') }}</td></tr>
+                    <tr><th>Expiration Date</th><td>{{ attribution.get('whois', {}).get('whois_data', {}).get('expiration_date', 'N/A') }}</td></tr>
+                    <tr><th>Domain Age</th><td>{{ attribution.get('whois', {}).get('domain_age', {}).get('age_days', 'N/A') }} days</td></tr>
                 </table>
             </div>
         </div>
@@ -106,8 +106,8 @@
             {% if threat_intelligence.virustotal and threat_intelligence.virustotal.available %}
             <div class="card">
                 <h3>VirusTotal</h3>
-                <p><strong>Malicious Detections:</strong> {{ threat_intelligence.virustotal.data.data.attributes.last_analysis_stats.malicious }}</p>
-                <p><strong>Suspicious Detections:</strong> {{ threat_intelligence.virustotal.data.data.attributes.last_analysis_stats.suspicious }}</p>
+                <p><strong>Malicious Detections:</strong> {{ threat_intelligence.get('virustotal', {}).get('data', {}).get('data', {}).get('attributes', {}).get('last_analysis_stats', {}).get('malicious', 'N/A') }}</p>
+                <p><strong>Suspicious Detections:</strong> {{ threat_intelligence.get('virustotal', {}).get('data', {}).get('data', {}).get('attributes', {}).get('last_analysis_stats', {}).get('suspicious', 'N/A') }}</p>
             </div>
             {% else %}
             <div class="card">
