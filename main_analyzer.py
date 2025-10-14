@@ -419,8 +419,8 @@ class CyberForensicsAnalyzer:
         
         try:
             # Screenshot
-            screenshot_path = await self.screenshot_collector.capture_screenshot(url)
-            evidence['screenshot'] = screenshot_path
+            screenshot_result = await self.screenshot_collector.capture(url)
+            evidence['screenshot'] = screenshot_result
             
             # Page source - skip for now (requires additional implementation)
             # page_source = await self.content_analyzer.get_page_source(url)
@@ -565,16 +565,55 @@ class CyberForensicsAnalyzer:
         report_files = {}
         
         try:
+            # 1. Determine all file paths and add them to the results for templating
+            safe_url = self.results.get('target_url', 'unknown').replace('://', '_').replace('/', '_')
+            base_filename = f"forensic_report_{safe_url}"
+            
+            report_file_paths = {}
             if 'html' in formats:
-                html_file = self.html_reporter.generate_report(self.results)
-                report_files['html'] = html_file
-            
+                report_file_paths['html'] = f"{base_filename}.html"
             if 'pdf' in formats:
-                pdf_file = self.pdf_reporter.generate_report(self.results, output_path)
-                report_files['pdf'] = pdf_file
-            
+                report_file_paths['pdf'] = f"{base_filename}.pdf"
             if 'json' in formats:
-                json_file = self.json_exporter.export_data(self.results, output_path)
+                report_file_paths['json'] = f"{base_filename}.json"
+
+            screenshot_info = self.results.get('evidence', {}).get('screenshot', {})
+            if screenshot_info and screenshot_info.get('screenshot_path'):
+                # Make screenshot path relative to the reports directory
+                s_path = Path(screenshot_info['screenshot_path'])
+                report_file_paths['screenshot'] = f"../{s_path.parent.name}/{s_path.name}"
+
+            self.results['report_files'] = report_file_paths
+
+            # 2. Render HTML template with all information
+            html_content = None
+            if 'html' in formats or 'pdf' in formats:
+                try:
+                    template = self.html_reporter.env.get_template('report_template.html')
+                    html_content = template.render(**self.results)
+                except Exception as e:
+                    logger.error(f"Failed to render HTML template: {e}", exc_info=True)
+
+            # 3. Write report files
+            if html_content:
+                if 'html' in formats:
+                    html_filepath = output_path / report_file_paths['html']
+                    try:
+                        with open(html_filepath, 'w', encoding='utf-8') as f:
+                            f.write(html_content)
+                        logger.info(f"HTML report generated: {html_filepath}")
+                        report_files['html'] = str(html_filepath)
+                    except Exception as e:
+                        logger.error(f"HTML report file generation failed: {e}")
+
+                if 'pdf' in formats:
+                    pdf_file = self.pdf_reporter.generate_report(html_content, report_file_paths['pdf'])
+                    if pdf_file:
+                        report_files['pdf'] = pdf_file
+
+            if 'json' in formats:
+                json_filepath = output_path / report_file_paths['json']
+                json_file = self.json_exporter.export_data(self.results, json_filepath)
                 report_files['json'] = json_file
             
             # Always generate IOCs
