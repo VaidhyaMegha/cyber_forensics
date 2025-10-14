@@ -104,6 +104,13 @@ cd cyber_forensics
 pip install -r requirements.txt
 ```
 
+> **Note for Windows Users (for PDF Reporting):**
+> To generate PDF reports, `WeasyPrint` requires the GTK+ runtime, which is not installed by `pip`. You must install it manually:
+> 1. **Install MSYS2**: Download and install from [msys2.org](https://www.msys2.org/).
+> 2. **Install Pango**: Open the MSYS2 shell and run `pacman -S mingw-w64-x86_64-pango`.
+> 3. **Update Path**: Add `C:\msys64\mingw64\bin` to your system's Path environment variable to make the libraries accessible.
+> This step is **only required** if you intend to generate PDF reports.
+
 ### **Basic Analysis**
 ```bash
 # Analyze a suspicious URL

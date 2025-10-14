@@ -6,7 +6,6 @@ requests>=2.31.0
 urllib3>=2.0.0
 dnspython>=2.4.0
 python-whois>=0.8.0
-ipaddress
 
 # Security and SSL analysis
 cryptography>=41.0.0
@@ -56,7 +55,6 @@ markdown>=3.5.0
 weasyprint>=60.0
 
 # Database and caching
-#sqlite3
 redis>=4.6.0
 pymongo>=4.5.0
 
@@ -77,8 +75,6 @@ python-Levenshtein>=0.21.0
 
 # Async and performance
 aiohttp>=3.8.0
-asyncio
-#concurrent.futures
 
 # Development and testing
 pytest>=7.4.0
